@@ -1,9 +1,11 @@
 import connectDB from '../DB/connection.js'
 import guardianRouter from './modules/guardian/guardian.router.js'
 import { globalErrorHandling } from './utils/errorHandling.js'
+import cors from 'cors'
 
 const bootstrap = (app , express) => {
     
+    app.use(cors())
     app.use(express.json())
     app.use("/guardian", guardianRouter)
     app.all("*" , (req ,res ,next) => {
