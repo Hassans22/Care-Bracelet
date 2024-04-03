@@ -69,6 +69,8 @@ const guardianSchema = new Schema({
   },
   forgetCode: String,
   activationCode: String,
+  complaint: String,
+  codeDeleteAccount:String
   },{
     timestamps: true
 });

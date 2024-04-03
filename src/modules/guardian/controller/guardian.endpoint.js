@@ -13,6 +13,7 @@ import Randomstring from "randomstring";
 import guardianModel from "../../../../DB/model/guardian.model.js";
 
 
+
 export const signup = asyncHandler(async (req, res, next) => {
 
   const { firstName,
@@ -83,7 +84,7 @@ export const signup = asyncHandler(async (req, res, next) => {
       token_Activate_Account: token
     })
     : next(new Error("wrong please try agian", { cause: 400 }));
-})
+});
 export const activateAccount = asyncHandler(async (req, res, next) => {
   const { token } = req.headers;
   const { activationCode } = req.body;
@@ -96,10 +97,10 @@ export const activateAccount = asyncHandler(async (req, res, next) => {
       $set: { isConfirmed: true },
       $unset: { activationCode: 1 }
     });
-  return res.json({ message: "Done , now you can logging in", success: true })
-  }else
+    return res.json({ message: "Done , now you can logging in", success: true })
+  } else
 
-  return next(new Error("In-valid code please check it or request for new code", { cause: 404 }));
+    return next(new Error("In-valid code please check it or request for new code", { cause: 404 }));
 });
 export const ReconfirmAccountActivation = asyncHandler(
   async (req, res, next) => {
@@ -125,8 +126,7 @@ export const ReconfirmAccountActivation = asyncHandler(
         Message: "check inbox !"
       })
       : next(new Error("wrong please try agian", { cause: 400 }));
-  }
-);
+  });
 export const login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
   const user = await guardianModel.findOne({ email });
@@ -189,8 +189,7 @@ export const sendForgetPasswordCodeEmail = asyncHandler(
         Message: "check inbox !"
       })
       : next(new Error("wrong please try agian", { cause: 400 }));
-  }
-);
+  });
 export const ReconfirmResetPasswordEmail = asyncHandler(
   async (req, res, next) => {
     const { email } = req.body;
@@ -216,8 +215,7 @@ export const ReconfirmResetPasswordEmail = asyncHandler(
         Message: "check inbox !"
       })
       : next(new Error("wrong please try agian", { cause: 400 }));
-  }
-);
+  });
 export const codeResetPasswordWithEmail = asyncHandler(
   async (req, res, next) => {
     const { forgetCode, email } = req.body;
@@ -238,8 +236,7 @@ export const codeResetPasswordWithEmail = asyncHandler(
     } else {
       return next(new Error("In-valid code", { cause: 400 }));
     }
-  }
-);
+  });
 export const ResetPasswordWithEmail = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
   const user = await guardianModel.findOne({ email });
@@ -252,4 +249,43 @@ export const ResetPasswordWithEmail = asyncHandler(async (req, res, next) => {
     await token.save();
   });
   return res.json({ success: true, Message: "Done" });
+});
+
+export const sendCodeDeleteAccount = asyncHandler(async (req, res, next) => {
+  const user = await guardianModel.findById(req.user._id);
+  if (!user)
+    return next(
+      new Error(
+        'In-valid user Data',
+        { cause: 400 }
+      )
+    );
+  const code = Randomstring.generate({
+    length: 4,
+    charset: 'numeric',
+  });
+  user.codeDeleteAccount = code;
+  await user.save();
+  const isSend = await sendEmail({
+    to: email,
+    subject: 'Are you sure you want to delete your account?!',
+    html: TempConfirmationEmail(user.firstName, code),
+  });
+  return isSend
+    ? res.json({
+      success: true,
+      Message: 'check inbox !',
+    })
+    : next(new Error('wrong please try agian', { cause: 400 }));
+});
+export const deleteAccount = asyncHandler(async (req, res, next) => {
+  const { code } = req.body;
+  const codeDocument = await guardianModel.findOne({ codeDeleteAccount: code });
+  if (codeDocument) {
+    await guardianModel.findByIdAndDelete(codeDocument._id);
+    return res.json({
+      success: true,
+      Message: 'The account has been deleted successfully',
+    });
+  }
 });

@@ -23,19 +23,19 @@ export const signupSchema = joi
   })
   .required();
 
-  export const activateAccountSchema = joi
+export const activateAccountSchema = joi
   .object({
     activationCode: joi.string().max(4).required()
   })
   .required();
-  export const loginSchema = joi
+export const loginSchema = joi
   .object({
     email: joi.string().required(),
     password: joi.string().required()
   })
   .required();
 
-  export const forgetCodeEmailSchema = joi
+export const forgetCodeEmailSchema = joi
   .object({
     email: joi
       .string()
@@ -101,3 +101,23 @@ export const forgetCodePhoneSchema = joi
   .object({
     phone: joi.string().max(14).required()
   })
+export const editProfile = joi
+  .object({
+    firstName: joi.string().min(3).max(20).required(),
+    lastName: joi.string().min(3).max(20).required(),
+    phoneNumber1: joi.string().max(11).required(),
+    email: joi
+      .string()
+      .email({
+        minDomainSegments: 2,
+        maxDomainSegments: 4,
+        tlds: {
+          allow: ["com", "net"]
+        }
+      }),
+    dateOfBirth: joi.date().required(),
+  })
+  .required();
+export const deleteAccount = joi.object({
+  code: joi.string().required()
+}).required();
