@@ -2,7 +2,6 @@ import { validation } from '../../middleware/validation.middelware.js';
 import * as guardianController from './controller/guardian.endpoint.js'
 import { Router } from "express";
 import * as validator from '../guardian.validation.js'
-
 import { auth } from '../../middleware/authentication .middleware.js';
 import { autherized } from '../../middleware/authorization.middleware.js';
 const router = Router();
@@ -53,26 +52,22 @@ router.patch(
     validation(validator.resetPasswordwithEmail),
     guardianController.ResetPasswordWithEmail
 );
-router.post("/sendCodeDeleteAccount",
+
+router.post(
+    "/sendCodeDeleteAccount",
     auth,
     autherized("user"),
     guardianController.sendCodeDeleteAccount
 );
-router.patch("/deleteAccount",
+
+router.patch(
+    "/deleteAccount",
     auth,
     autherized("user"),
     validation(validator.deleteAccount),
     guardianController.deleteAccount
 );
 
-
-
-// router.patch(
-//     '/editProfile',
-//     validation(validator.editProfile),
-//     guardianController.editProfile,
-//     fileUpload(fileUpload.fileObjects.image).single("profilePhoto")
-// );
 
 
 export default router 

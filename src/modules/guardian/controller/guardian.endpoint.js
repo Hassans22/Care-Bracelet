@@ -3,7 +3,8 @@ import { asyncHandler } from "../../../utils/errorHandling.js";
 import jwt from 'jsonwebtoken';
 import {
   TempConfirmationEmail,
-  TempForgetPassword
+  TempForgetPassword,
+  TempCodeDeleteAccount
 } from '../../../utils/html.js'
 import sendEmail from '../../../utils/sendEmail.js'
 import bcrypt from 'bcryptjs'
@@ -102,31 +103,30 @@ export const activateAccount = asyncHandler(async (req, res, next) => {
 
     return next(new Error("In-valid code please check it or request for new code", { cause: 404 }));
 });
-export const ReconfirmAccountActivation = asyncHandler(
-  async (req, res, next) => {
-    const { token } = req.headers;
-    const decoded = jwt.verify(token, process.env.TOKEN_SIGNATURE);
-    const code = Randomstring.generate({
-      length: 4,
-      charset: "numeric"
-    });
-    const user = await guardianModel.findByIdAndUpdate(decoded.id, {
-      activationCode: code,
-    });
-    if (!user) return next(new Error("Please create a new account"));
-    if (user.isConfirmed) return next(new Error("please go to login"));
-    const isSend = await sendEmail({
-      to: user.email,
-      subject: "Please activate your account!",
-      html: TempConfirmationEmail(user.firstName, code)
-    });
-    return isSend
-      ? res.json({
-        success: true,
-        Message: "check inbox !"
-      })
-      : next(new Error("wrong please try agian", { cause: 400 }));
+export const ReconfirmAccountActivation = asyncHandler(async (req, res, next) => {
+  const { token } = req.headers;
+  const decoded = jwt.verify(token, process.env.TOKEN_SIGNATURE);
+  const code = Randomstring.generate({
+    length: 4,
+    charset: "numeric"
   });
+  const user = await guardianModel.findByIdAndUpdate(decoded.id, {
+    activationCode: code,
+  });
+  if (!user) return next(new Error("Please create a new account"));
+  if (user.isConfirmed) return next(new Error("please go to login"));
+  const isSend = await sendEmail({
+    to: user.email,
+    subject: "Please activate your account!",
+    html: TempConfirmationEmail(user.firstName, code)
+  });
+  return isSend
+    ? res.json({
+      success: true,
+      Message: "check inbox !"
+    })
+    : next(new Error("wrong please try agian", { cause: 400 }));
+});
 export const login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
   const user = await guardianModel.findOne({ email });
@@ -166,77 +166,74 @@ export const login = asyncHandler(async (req, res, next) => {
     .status(200)
     .json({ success: true, Message: "go to home page", auth: token });
 });
-export const sendForgetPasswordCodeEmail = asyncHandler(
-  async (req, res, next) => {
-    const { email } = req.body;
-    const user = await guardianModel.findOne({ email });
-    if (!user)
-      return next(new Error("This account is not available", { cause: 400 }));
-    const code = Randomstring.generate({
-      length: 4,
-      charset: "numeric"
-    });
-    user.forgetCode = code;
-    await user.save();
-    const isSend = await sendEmail({
-      to: user.email,
-      subject: "Reset your password!",
-      html: TempForgetPassword(user.firstName, code)
-    });
-    return isSend
-      ? res.json({
-        success: true,
-        Message: "check inbox !"
-      })
-      : next(new Error("wrong please try agian", { cause: 400 }));
+export const sendForgetPasswordCodeEmail = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  const user = await guardianModel.findOne({ email });
+  if (!user)
+    return next(new Error("This account is not available", { cause: 400 }));
+  const code = Randomstring.generate({
+    length: 4,
+    charset: "numeric"
   });
-export const ReconfirmResetPasswordEmail = asyncHandler(
-  async (req, res, next) => {
-    const { email } = req.body;
-    const code = Randomstring.generate({
-      length: 4,
-      charset: "numeric"
-    });
-    const user = await guardianModel.findOneAndUpdate(
+  user.forgetCode = code;
+  await user.save();
+  const isSend = await sendEmail({
+    to: user.email,
+    subject: "Reset your password!",
+    html: TempForgetPassword(user.firstName, code)
+  });
+  return isSend
+    ? res.json({
+      success: true,
+      Message: "check inbox !"
+    })
+    : next(new Error("wrong please try agian", { cause: 400 }));
+});
+export const ReconfirmResetPasswordEmail = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  const code = Randomstring.generate({
+    length: 4,
+    charset: "numeric"
+  });
+  const user = await guardianModel.findOneAndUpdate(
+    { email },
+    {
+      forgetCode: code,
+    }
+  );
+  if (!user) return next(new Error("user not found", { cause: 404 }));
+  const isSend = await sendEmail({
+    to: user.email,
+    subject: "Reset your password!",
+    html: TempForgetPassword(user.firstName, code)
+  });
+  return isSend
+    ? res.json({
+      success: true,
+      Message: "check inbox !"
+    })
+    : next(new Error("wrong please try agian", { cause: 400 }));
+});
+export const codeResetPasswordWithEmail = asyncHandler(async (req, res, next) => {
+  const { forgetCode, email } = req.body;
+  const isUser = await guardianModel.findOne({ email });
+  if (!isUser) return next(new Error("user not found", { cause: 404 }));
+  const codeDocument = await guardianModel.findOne({ forgetCode });
+  if (codeDocument) {
+    await guardianModel.findOneAndUpdate(
       { email },
       {
-        forgetCode: code,
+        $unset: { forgetCode: 1 }
       }
     );
-    if (!user) return next(new Error("user not found", { cause: 404 }));
-    const isSend = await sendEmail({
-      to: user.email,
-      subject: "Reset your password!",
-      html: TempForgetPassword(user.firstName, code)
+    return res.json({
+      success: true,
+      Message: "The code you entered is correct"
     });
-    return isSend
-      ? res.json({
-        success: true,
-        Message: "check inbox !"
-      })
-      : next(new Error("wrong please try agian", { cause: 400 }));
-  });
-export const codeResetPasswordWithEmail = asyncHandler(
-  async (req, res, next) => {
-    const { forgetCode, email } = req.body;
-    const isUser = await guardianModel.findOne({ email });
-    if (!isUser) return next(new Error("user not found", { cause: 404 }));
-    const codeDocument = await guardianModel.findOne({ forgetCode });
-    if (codeDocument) {
-      await guardianModel.findOneAndUpdate(
-        { email },
-        {
-          $unset: { forgetCode: 1 }
-        }
-      );
-      return res.json({
-        success: true,
-        Message: "The code you entered is correct"
-      });
-    } else {
-      return next(new Error("In-valid code", { cause: 400 }));
-    }
-  });
+  } else {
+    return next(new Error("In-valid code", { cause: 400 }));
+  }
+});
 export const ResetPasswordWithEmail = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
   const user = await guardianModel.findOne({ email });
@@ -250,7 +247,6 @@ export const ResetPasswordWithEmail = asyncHandler(async (req, res, next) => {
   });
   return res.json({ success: true, Message: "Done" });
 });
-
 export const sendCodeDeleteAccount = asyncHandler(async (req, res, next) => {
   const user = await guardianModel.findById(req.user._id);
   if (!user)
@@ -267,9 +263,9 @@ export const sendCodeDeleteAccount = asyncHandler(async (req, res, next) => {
   user.codeDeleteAccount = code;
   await user.save();
   const isSend = await sendEmail({
-    to: email,
+    to: user.email,
     subject: 'Are you sure you want to delete your account?!',
-    html: TempConfirmationEmail(user.firstName, code),
+    html: TempCodeDeleteAccount(user.firstName, code),
   });
   return isSend
     ? res.json({
