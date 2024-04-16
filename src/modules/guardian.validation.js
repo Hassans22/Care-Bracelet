@@ -97,27 +97,14 @@ export const resetPasswordwithEmail = joi
     confirmPassword: joi.string().valid(joi.ref("password")).required()
   })
   .required();
-export const forgetCodePhoneSchema = joi
-  .object({
-    phone: joi.string().max(14).required()
-  })
-export const editProfile = joi
-  .object({
-    firstName: joi.string().min(3).max(20).required(),
-    lastName: joi.string().min(3).max(20).required(),
-    phoneNumber1: joi.string().max(11).required(),
-    email: joi
-      .string()
-      .email({
-        minDomainSegments: 2,
-        maxDomainSegments: 4,
-        tlds: {
-          allow: ["com", "net"]
-        }
-      }),
+
+export const editProfile = joi.object({
+    userName: joi.string().required(),
+    phoneNumber1: joi.string().required(),
+    email: joi.string().email().required(),
     dateOfBirth: joi.date().required(),
-  })
-  .required();
+  }).required();
+
 export const deleteAccount = joi.object({
   code: joi.string().required()
 }).required();

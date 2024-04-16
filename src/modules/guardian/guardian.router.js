@@ -4,6 +4,7 @@ import { Router } from "express";
 import * as validator from '../guardian.validation.js'
 import { auth } from '../../middleware/authentication .middleware.js';
 import { autherized } from '../../middleware/authorization.middleware.js';
+import { fileValidation, upload } from '../../utils/multer.js';
 const router = Router();
 
 router.post(
@@ -68,6 +69,22 @@ router.patch(
     guardianController.deleteAccount
 );
 
+router.patch(
+    "/editProfile",
+    auth,
+    autherized("user"),
+    validation(validator.editProfile),
+    guardianController.editProfile,
+);
 
+router.post(
+    "/profilePic",
+    auth,
+    upload({
+        folder: "users/profilepics",
+        filetype: fileValidation.image
+    }).single("pp"),
+    guardianController.updateProfilePic,
+);
 
 export default router 
