@@ -12,7 +12,6 @@ import tokenModel from "../../../../DB/model/token.model.js"
 import slugify from "slugify";
 import Randomstring from "randomstring";
 import guardianModel from "../../../../DB/model/guardian.model.js";
-import cloudinary from "../../../utils/cloudinary.js";
 
 
 
@@ -286,40 +285,6 @@ export const deleteAccount = asyncHandler(async (req, res, next) => {
     });
   }
 });
-// export const editProfile = asyncHandler(async (req, res, next) => {
-//   const { userName, phoneNumber1, email, dateOfBirth } = req.body;
-//   const guardian = await guardianModel.findById(req.params._id)
-//   if (!guardian) {
-//     return next(new Error('In-valid user ID !', { cause: 404 }));
-//   }
-//   const checkEmail = await guardianModel.findOne({ email })
-//   if (checkEmail) {
-//     return next(new Error('email already exist !', { cause: 400 }));
-//   }
-//   await guardianModel.findOneAndUpdate({ email })
-
-//   const checkuserName = await guardianModel.findOne({ userName })
-//   if (checkuserName) {
-//     return next(new Error("this name is used before please enter new name", { cause: 400 }))
-//   }
-//   await guardianModel.findByIdAndUpdate(userName)
-
-//   const checkphoneNumber1 = await guardianModel.findOne({ phoneNumber1 })
-//   if (checkphoneNumber1) {
-//     return next(new Error("Phone Number already exist ! ", { cause: 400 }))
-//   }
-//   await guardianModel.findByIdAndUpdate(phoneNumber1)
-
-//   const checkdateOfBirth = await guardianModel.findOne({ dateOfBirth })
-//   if (checkdateOfBirth) {
-//     return next(new Error("in-valid date of birth please try again", { cause: 400 }))
-//   }
-//   await guardianModel.findByIdAndUpdate(dateOfBirth)
-
-//   await guardian.save()
-//   return res.json({ success: true, Message: "Done" });
-// });
-
 export const editProfile = asyncHandler(async (req, res, next) => {
   const { userName, phoneNumber1, email, dateOfBirth } = req.body;
 
@@ -342,7 +307,6 @@ export const editProfile = asyncHandler(async (req, res, next) => {
 
   return res.json({ success: true, message: 'Profile updated successfully' });
 });
-
 export const updateProfilePic = asyncHandler(async (req, res, next) => {
   const id = req.user._id;
   const user = await guardianModel.findByIdAndUpdate(
